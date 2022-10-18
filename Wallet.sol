@@ -78,15 +78,24 @@ contract Wallet{
     //     //loop through transfer requests(double loop?) look through each (for address), (for txfer id), if bool true = uint limit(2) send Txfer.
     //     //7:28 
     // }
-    // function getApprovals(Transfer memory) payable public returns (){
+    
         function Approved(uint _id) public onlyOwners{
             //owner should not be able to vote twice.
-            require(approvals[msg.sender][_id] = false
+            require(approvals[msg.sender][_id] == false);
             //Owner should not be able to vote on txfer request that was already sent.
             require(transferRequests[_id].hasBeenSent == false);
+            //once requirments are met sets approval mapping to true!
+            approvals[msg.sender][_id] =  true; //doublemapping.
+
+            transferRequests[_id].approvals++;
+
+            if (transferRequests[_id].approvals >= limit){
+                transferRequests[_id].hasBeenSent = true;
+                transferRequests[_id].reciever.transfer(transferRequests[_id].amount);
+            }
         }
-    //transferRequests:  Transfer[] transferRequests;
-         approvals[transferRequests.from][transferRequests.txid??] =  //doublemapping.
+    
+         
     }
 
     function getApprovals(address _addy, uint tid) public view returns(bool){
