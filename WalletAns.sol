@@ -16,15 +16,15 @@ pragma abicoder v2;
 
 
 contract Wallet{
-    // uint limit;
+    uint limit;
     address [] public owners;
 
-    constructor(address[] memory _owners, uint limit){
+    constructor(address[] memory _owners, uint _limit){
         owners=_owners;
         limit=_limit;
     }
 
-    mapping(address=>uint) balance;
+    mapping (address=>uint) balance;
 
     function deposit ()public payable returns(uint){
         balance[msg.sender]+= msg.value;
@@ -33,7 +33,7 @@ contract Wallet{
 
     struct Transfer{
         uint amount;
-        address sendTo;
+        address reciever;
         uint approvals;
         bool hasBeenSent;
         uint id;
@@ -41,21 +41,38 @@ contract Wallet{
 
     Transfer [] transferRequests;
 
-    mapping(address=>(mapping(uint=>bool))) approved
+
+    mapping (address=>mapping(uint=>bool)) approved;
 
     modifier onlyOwners(){
-    //must verify owners send in request with msg.sender of addTransaction.
-    bool owner =false// assumes owner is false.
-    for(uint i=0;i<owners.length; i++){
-        if (owners[i]== msg.sender){  //change approval number
-           owner =true;
+        bool owner = false;
+    for(uint i=0; i<owners.length; i++){    
+        if(owners[i] == msg.sender){
+            owner =true;
         }
-        require(owner==true);
-    }        
+    require(owner == true);
+    _;
+        }
+    }  
+    
+    //Do I use payable here?
+    function createTransaction(uint _amount, address _reciever) public payable onlyOwners{
+        transferRequests.push(Transfer(_amount, _reciever, 0, false, transferRequests.length));
+    }
         
+    function approval(uint _id)public payable onlyOwners{
+        //This is where txfer is sent.
+
+    transferRequests[_id].approvals += 1;
+
+    if(transferRequests[_id].approvals>= limit){
+        transferRequests[_id].hasBeenSent = true;
+        transferRequests[_id].reciever.send(transferRequests[_id].amount);
     }
 
-    function addTransaction(uint _amount, address sentTo ) public onlyOwners {
-        transferRequests.push(Transfer(_amount, _sendTo, 0, false, transferRequests.length)); 
+
+     
     }
+
+
 }
