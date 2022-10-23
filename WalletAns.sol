@@ -26,14 +26,16 @@ contract Wallet{
 
     mapping (address=>uint) balance;
 
-    function deposit ()public payable returns(uint){
+    function deposit ()public payable{
         balance[msg.sender]+= msg.value;
     }
-
+    function getBalance()view public returns(uint){
+        return balance[msg.sender];
+    }
 
     struct Transfer{
-        uint amount;
-        address reciever;
+        uint  amount;
+        address payable reciever;
         uint approvals;
         bool hasBeenSent;
         uint id;
@@ -56,23 +58,31 @@ contract Wallet{
     }  
     
     //Do I use payable here?
-    function createTransaction(uint _amount, address _reciever) public payable onlyOwners{
+    function createTransaction(uint _amount, address payable _reciever) public  onlyOwners{
         transferRequests.push(Transfer(_amount, _reciever, 0, false, transferRequests.length));
     }
-        
-    function approval(uint _id)public payable onlyOwners{
-        //This is where txfer is sent.
+    
+    //Each owner can only use approve fxn once.
+   function approve(uint _id) public  onlyOwners {
+        // How to know somethings still needs approval?
+        //approval count in struct
+        //approved mapping = false
+        require(approved[msg.sender][_id]== false);
+        require(transferRequests[_id].hasBeenSent==false);
 
-    transferRequests[_id].approvals += 1;
+        transferRequests[_id].approvals++;//physically changed the approval number but how to record this to specific address?Mapping.
+        approved[msg.sender][_id]=true; // address tied to tid to save mapping which txn was approved.
 
-    if(transferRequests[_id].approvals>= limit){
-        transferRequests[_id].hasBeenSent = true;
-        transferRequests[_id].reciever.send(transferRequests[_id].amount);
-    }
-
-
+        if(transferRequests[_id].approvals>=limit){
+            
+            transferRequests[_id].reciever.transfer(transferRequests[_id].amount);
+            transferRequests[_id].hasBeenSent=true;
+        }
      
     }
 
 
+    function getTransferRequests() public view returns(Transfer [] memory){
+        return  transferRequests;
+    }
 }
